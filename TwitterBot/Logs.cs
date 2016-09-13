@@ -75,7 +75,7 @@ namespace TwitterBot
                 File.AppendAllText(file, "Old log was renamed to " + file + DateTime.Now);
             }
 
-            File.AppendAllText(file, string.Format("{0} => {1}\n", DateTime.Now, logstring));
+            File.AppendAllText(file, $"{DateTime.Now} => {logstring}\n");
         }
 
 		/// <summary>
@@ -84,7 +84,7 @@ namespace TwitterBot
 		/// <param name="user">The user.</param>
 		public void WriteBlackList(decimal user)
 		{
-			File.AppendAllText("blacklist.txt", user.ToString()+"\n");
+		    File.AppendAllText("blacklist.txt", user + "\n");
 		}
     }
 }

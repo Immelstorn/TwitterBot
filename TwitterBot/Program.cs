@@ -8,12 +8,12 @@ namespace TwitterBot
     {
         #region vars
 
-        private static API _api = API.GetApi();
+        private static readonly API _api = API.GetApi();
         private static List<DateTime> _updateTimes;
-        private static Logs _logs = Logs.GetLogsClass();
+        private static readonly Logs _logs = Logs.GetLogsClass();
         private static Thread _thr;
         private static bool _excep;
-        private static bool newDay = false;
+        private static bool _newDay;
         #endregion
 
         static void Main(string[] args)
@@ -22,9 +22,6 @@ namespace TwitterBot
             _thr.Start();
         }
 
-        /// <summary>
-        /// Main после эксепшна
-        /// </summary>
         private static void MainAfterExeption()
         {
             _logs.WriteLog("log.txt", "Exception");
@@ -43,10 +40,10 @@ namespace TwitterBot
                     if (!_excep)
                     {
                         _updateTimes = _api.GetUpdateTimes();
-                        newDay = false;
+                        _newDay = false;
                     }
 
-                    while (!newDay)
+                    while (!_newDay)
                     {
                         try
                         {
@@ -57,10 +54,9 @@ namespace TwitterBot
                             else
                             {
                                 SleepUntilTomorrow();
-
                                 ClearingFollowers();
 
-                                if (newDay)
+                                if (_newDay)
                                 {
                                     _excep = false;
                                     break;
@@ -88,9 +84,9 @@ namespace TwitterBot
         /// <param name="e">The e.</param>
         private static void CatchException(Exception e)
         {
-            _logs.WriteLog("errorlog.txt", string.Format("\nMessage: {0}\n TargetSite: {1}\n Data: {2}\n StackTrace: {3}\n InnerException: {4}" +
-                                                        "\n Source: {5}\n Data: {6}\n GetBaseException: {7}\n HelpLink: {8}\n",
-                e.Message, e.TargetSite, e.Data, e.StackTrace, e.InnerException, e.Source, e.Data, e.GetBaseException(), e.HelpLink));
+            _logs.WriteLog("errorlog.txt",
+                    $"\nMessage: {e.Message}\n TargetSite: {e.TargetSite}\n Data: {e.Data}\n StackTrace: {e.StackTrace}\n InnerException: {e.InnerException}" +
+                    $"\n Source: {e.Source}\n Data: {e.Data}\n GetBaseException: {e.GetBaseException()}\n HelpLink: {e.HelpLink}\n");
             Console.WriteLine("{0} in {1}", e.Message, e.TargetSite);
             _excep = true;
             MainAfterExeption();
@@ -118,8 +114,8 @@ namespace TwitterBot
             Console.WriteLine(DateTime.Now + " ==>" + " Sleeping until 00:01\n");
             _logs.WriteLog("log.txt", "Sleeping until 00:01\n");
             Thread.Sleep(DateTime.Parse("23:59") - DateTime.Now + TimeSpan.FromMinutes(2));
-            newDay = true;
-            _logs.WriteLog("log.txt", "newDay =" + newDay);
+            _newDay = true;
+            _logs.WriteLog("log.txt", "newDay =" + _newDay);
         }
 
         /// <summary>
@@ -205,9 +201,9 @@ namespace TwitterBot
         /// <param name="e">The e.</param>
         private static void CatchExceptionWhileUpdate(Exception e)
         {
-            _logs.WriteLog("errorlog.txt", string.Format("\nMessage: {0}\n TargetSite: {1}\n Data: {2}\n StackTrace: {3}\n InnerException: {4}" +
-                                                    "\n Source: {5}\n Data: {6}\n GetBaseException: {7}\n HelpLink: {8}\n",
-            e.Message, e.TargetSite, e.Data, e.StackTrace, e.InnerException, e.Source, e.Data, e.GetBaseException(), e.HelpLink));
+            _logs.WriteLog("errorlog.txt",
+                    $"\nMessage: {e.Message}\n TargetSite: {e.TargetSite}\n Data: {e.Data}\n StackTrace: {e.StackTrace}\n InnerException: {e.InnerException}" +
+                    $"\n Source: {e.Source}\n Data: {e.Data}\n GetBaseException: {e.GetBaseException()}\n HelpLink: {e.HelpLink}\n");
             Console.WriteLine("{0} in {1}", e.Message, e.TargetSite);
         }
     }

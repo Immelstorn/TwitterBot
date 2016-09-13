@@ -11,11 +11,11 @@ namespace TwitterBot
     {
         #region vars
 
-        private OAuthTokens _tokens = new OAuthTokens();
+        private readonly OAuthTokens _tokens = new OAuthTokens();
 		private static API _instance;
 		private static object _syncLock = new object();
-		private Logs _logs;
-		private Random _random = new Random();
+		private readonly Logs _logs;
+		private readonly Random _random = new Random();
 		private int _remainingLimit;
 		private int _usersToFollow = 50;
         #endregion
@@ -31,7 +31,6 @@ namespace TwitterBot
 			_remainingLimit = apiStatus.ResponseObject.RemainingHits;
 		}
 
-		//дас ист синглтооон!
 		public static API GetApi()
 		{
 			if (_instance == null)
@@ -223,18 +222,14 @@ namespace TwitterBot
 				_logs.WriteLog("log.txt", "Всего статусов: " + tweetSearch.ResponseObject.Count);
 
 				//фильтруем реплаи, ссылки и хэштеги
-				foreach (var item in tweetSearch.ResponseObject)
-				{
-					if (!(item.Text.Contains('@') || item.Text.Contains('#') || item.Text.Contains("http")))
-					{
-						validStatuses.Add(item.Text);
-					}
-				}
-				_logs.WriteLog("log.txt", "Валидных статусов: " + validStatuses.Count);
+			    validStatuses.AddRange(tweetSearch.ResponseObject
+			                    .Where(item => !(item.Text.Contains('@') || item.Text.Contains('#') || item.Text.Contains("http")))
+			                    .Select(item => item.Text));
+			    _logs.WriteLog("log.txt", "Валидных статусов: " + validStatuses.Count);
 			}
 			else
 			{
-				_logs.WriteLog("log.txt", "query is NULL!!!!!!!!!!!!!!!!");
+				_logs.WriteLog("log.txt", "query is NULL!");
 
 			}
 			return validStatuses;
