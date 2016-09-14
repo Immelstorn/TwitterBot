@@ -61,7 +61,7 @@ namespace TwitterBot
             }
             catch (Exception e)
             {
-                Console.WriteLine("an error occured: {0}", e.Message);
+                Console.WriteLine("an error occured: {0}", e.InnerException?.Message ?? e.Message);
             }
         }
     }

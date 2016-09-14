@@ -11,9 +11,9 @@ namespace TwitterBot
     {
         #region vars
 
-        private static readonly API _api = API.GetApi();
+        private static readonly API _api ;//= API.GetApi();
         private static List<DateTime> _updateTimes;
-        private static readonly Logs _logs = Logs.GetLogsClass();
+        private static readonly Logs _logs ;//= Logs.GetLogsClass();
         private static Thread _thr;
         private static bool _excep;
         private static bool _newDay;
@@ -21,17 +21,26 @@ namespace TwitterBot
 
         public static void Main()
         {
-            var schedulerFactory = new StdSchedulerFactory();
-            var scheduler = schedulerFactory.GetScheduler();
-            scheduler.Start();
+            try
+            {
+                var schedulerFactory = new StdSchedulerFactory();
+                var scheduler = schedulerFactory.GetScheduler();
+                scheduler.Start();
 
-            var job = JobBuilder.Create<TwitterJob>().Build();
+                var job = JobBuilder.Create<TwitterJob>().Build();
 
-            var trigger = TriggerBuilder.Create()
-                            .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
-                            .Build();
+                var trigger = TriggerBuilder.Create()
+                                .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
+                                .Build();
 
-            scheduler.ScheduleJob(job, trigger);
+                scheduler.ScheduleJob(job, trigger);
+            }
+            catch (Exception e)
+            {
+
+                throw;
+            }
+          
 
             //            _thr = new Thread(MainMethod) { Name = "Main method" };
             //            _thr.Start();
