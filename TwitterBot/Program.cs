@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Threading;
 
+using Quartz;
+using Quartz.Impl;
+
 namespace TwitterBot
 {
     class Program
@@ -16,10 +19,22 @@ namespace TwitterBot
         private static bool _newDay;
         #endregion
 
-        static void Main(string[] args)
+        public static void Main()
         {
-            _thr = new Thread(MainMethod) { Name = "Main method" };
-            _thr.Start();
+            var schedulerFactory = new StdSchedulerFactory();
+            var scheduler = schedulerFactory.GetScheduler();
+            scheduler.Start();
+
+            var job = JobBuilder.Create<TwitterJob>().Build();
+
+            var trigger = TriggerBuilder.Create()
+                            .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
+                            .Build();
+
+            scheduler.ScheduleJob(job, trigger);
+
+            //            _thr = new Thread(MainMethod) { Name = "Main method" };
+            //            _thr.Start();
         }
 
         private static void MainAfterExeption()
@@ -207,4 +222,5 @@ namespace TwitterBot
             Console.WriteLine("{0} in {1}", e.Message, e.TargetSite);
         }
     }
+
 }
