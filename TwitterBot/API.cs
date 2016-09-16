@@ -18,6 +18,33 @@ namespace TwitterBot
 		private readonly Random _random = new Random();
 		private int _remainingLimit;
 		private int _usersToFollow = 50;
+
+        private List<string> _wordsToSearch = new List<string> {
+            "закрыла",
+            "мои сиськи",
+            "моими сиськами",
+            "собиралась",
+            "решила",
+            "предлагаю",
+            "люблю",
+            "ебала",
+            "вздохнула",
+            "заплатила",
+            "купила",
+            "секс",
+            "муж",
+            "мой мужик",
+            "улыбаюсь",
+            "сняла",
+            "привыкла",
+            "любимые",
+            "охуенно",
+            "юбка",
+            "ПМС",
+            "оргазм",
+            "плкакать",
+            "узнала",
+        };
         #endregion
 
         private API()
@@ -243,7 +270,7 @@ namespace TwitterBot
 			//выбираем статус для постинга
 
 			//получили список фраз для поиска
-			var wordsForSearch = File.ReadAllLines("wordsToSearch.txt").ToList();
+		    var wordsForSearch = _wordsToSearch.GetRange(0, _wordsToSearch.Count);
 			var validStatuses = new List<string>();
 			var previousStatuses = File.ReadAllLines("StatusLog.txt");
 			var isNew = false;

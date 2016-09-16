@@ -33,12 +33,6 @@ namespace TwitterBot
                                 .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
                                 .Build();
 
-
-                _logs.WriteLog("Hello world");
-               
-
-
-
 //                scheduler.ScheduleJob(job, trigger);
             }
             catch (Exception e)

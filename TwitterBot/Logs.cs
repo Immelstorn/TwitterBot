@@ -5,7 +5,7 @@ using TwitterBot.DB.Entities;
 
 namespace TwitterBot
 {
-    public class Logs
+    internal class Logs
     {
 
         internal void WriteStatusLog(string status)
