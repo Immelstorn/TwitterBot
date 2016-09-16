@@ -13,7 +13,7 @@ namespace TwitterBot
 
         private static readonly API _api ;//= API.GetApi();
         private static List<DateTime> _updateTimes;
-        private static readonly Logs _logs ;//= Logs.GetLogsClass();
+        private static readonly Logs _logs =new Logs();
         private static Thread _thr;
         private static bool _excep;
         private static bool _newDay;
@@ -33,11 +33,16 @@ namespace TwitterBot
                                 .WithSimpleSchedule(x => x.WithIntervalInHours(24).RepeatForever())
                                 .Build();
 
-                scheduler.ScheduleJob(job, trigger);
+
+                _logs.WriteLog("Hello world");
+               
+
+
+
+//                scheduler.ScheduleJob(job, trigger);
             }
             catch (Exception e)
             {
-
                 throw;
             }
           
@@ -48,8 +53,7 @@ namespace TwitterBot
 
         private static void MainAfterExeption()
         {
-            _logs.WriteLog("log.txt", "Exception");
-            Console.WriteLine("Exception");
+            _logs.WriteLog("Exception");
             _thr = new Thread(MainMethod) { Name = "Main method" };
             _thr.Start();
         }
@@ -73,11 +77,11 @@ namespace TwitterBot
                         {
                             if (_updateTimes.Count != 0)
                             {
-                                SleepAndUpdate();
+//                                SleepAndUpdate();
                             }
                             else
                             {
-                                SleepUntilTomorrow();
+//                                SleepUntilTomorrow();
                                 ClearingFollowers();
 
                                 if (_newDay)
@@ -108,11 +112,8 @@ namespace TwitterBot
         /// <param name="e">The e.</param>
         private static void CatchException(Exception e)
         {
-            _logs.WriteLog("errorlog.txt",
-                    $"\nMessage: {e.Message}\n TargetSite: {e.TargetSite}\n Data: {e.Data}\n StackTrace: {e.StackTrace}\n InnerException: {e.InnerException}" +
-                    $"\n Source: {e.Source}\n Data: {e.Data}\n GetBaseException: {e.GetBaseException()}\n HelpLink: {e.HelpLink}\n");
-            Console.WriteLine("{0} in {1}", e.Message, e.TargetSite);
-            _excep = true;
+            _logs.WriteErrorLog(e);
+           _excep = true;
             MainAfterExeption();
         }
 
@@ -121,39 +122,24 @@ namespace TwitterBot
         /// </summary>
         private static void ClearingFollowers()
         {
-            _logs.WriteLog("log.txt", "Day of week: " + DateTime.Now.DayOfWeek + ", Is Sunday: " + (DateTime.Now.DayOfWeek == DayOfWeek.Sunday));
             if (DateTime.Now.DayOfWeek == DayOfWeek.Sunday)
             {
-                Console.WriteLine("Clearing followings:");
-                _logs.WriteLog("log.txt", "Clearing followings:");
+                _logs.WriteLog("Clearing followings:");
                 _api.ClearFollowings();
             }
         }
 
-        /// <summary>
-        ///это последний раз на сегодня, то спим до наступления следующего дня
-        /// </summary>
-        private static void SleepUntilTomorrow()
-        {
-            Console.WriteLine(DateTime.Now + " ==>" + " Sleeping until 00:01\n");
-            _logs.WriteLog("log.txt", "Sleeping until 00:01\n");
-            Thread.Sleep(DateTime.Parse("23:59") - DateTime.Now + TimeSpan.FromMinutes(2));
-            _newDay = true;
-            _logs.WriteLog("log.txt", "newDay =" + _newDay);
-        }
-
-        /// <summary>
-        /// попробовали заснуть на время до следующего апдейта
-        /// </summary>
-        private static void SleepAndUpdate()
-        {
-            _logs.WriteLog("log.txt", "Sleeping until " + _updateTimes[0] + "\n");
-            Console.WriteLine("Sleeping until " + _updateTimes[0] + "\n");
-            Thread.Sleep(_updateTimes[0] - DateTime.Now);
-            Updates();
-            _updateTimes.RemoveAt(0);
-            _excep = false;
-        }
+//      /// <summary>
+//        /// попробовали заснуть на время до следующего апдейта
+//        /// </summary>
+//        private static void SleepAndUpdate()
+//        {
+//            _logs.WriteLog("Sleeping until " + _updateTimes[0] + "\n");
+//            Thread.Sleep(_updateTimes[0] - DateTime.Now);
+//            Updates();
+//            _updateTimes.RemoveAt(0);
+//            _excep = false;
+//        }
 
         /// <summary>
         /// апдейтим
@@ -167,69 +153,52 @@ namespace TwitterBot
             }
             catch (Exception e)
             {
-                CatchExceptionWhileUpdate(e);
+                _logs.WriteErrorLog(e);
             }
 
             //фолловим по 5 человек три раза в день
             try
             {
-                _logs.WriteLog("log.txt", "Follow suggested users:");
-                Console.WriteLine("Follow suggested users:");
+                _logs.WriteLog("Follow suggested users:");
                 _api.Follow(_api.UsersToFollow());
             }
             catch (Exception e)
             {
-                CatchExceptionWhileUpdate(e);
+                _logs.WriteErrorLog(e);
             }
 
             //фолловим всех кто отреплаил
             try
             {
-                _logs.WriteLog("log.txt", "Follow who replied me:");
-                Console.WriteLine("Follow who replied me:");
+                _logs.WriteLog("Follow who replied me:");
                 _api.Follow(_api.MentionsToMe());
             }
             catch (Exception e)
             {
-                CatchExceptionWhileUpdate(e);
+                _logs.WriteErrorLog(e);
             }
 
             //фолловим всех кто отретвитил
             try
             {
-                _logs.WriteLog("log.txt", "Follow who retweeted me:");
-                Console.WriteLine("Follow who retweeted me:");
+                _logs.WriteLog("Follow who retweeted me:");
                 _api.Follow(_api.RetweetsOfMe());
             }
             catch (Exception e)
             {
-                CatchExceptionWhileUpdate(e);
+                _logs.WriteErrorLog(e);
             }
 
             //фолловим всех кто зафоловил
             try
             {
-                _logs.WriteLog("log.txt", "Follow who followed me:");
-                Console.WriteLine("Follow who followed me:");
+                _logs.WriteLog("Follow who followed me:");
                 _api.Follow(_api.WhoFollowedMe());
             }
             catch (Exception e)
             {
-                CatchExceptionWhileUpdate(e);
+                _logs.WriteErrorLog(e);
             }
         }
-
-        /// <summary>
-        /// Catches the exception while update.
-        /// </summary>
-        /// <param name="e">The e.</param>
-        private static void CatchExceptionWhileUpdate(Exception e)
-        {
-            _logs.WriteLog("errorlog.txt",
-                    $"\nMessage: {e.Message}\n TargetSite: {e.TargetSite}\n Data: {e.Data}\n StackTrace: {e.StackTrace}\n InnerException: {e.InnerException}" +
-                    $"\n Source: {e.Source}\n Data: {e.Data}\n GetBaseException: {e.GetBaseException()}\n HelpLink: {e.HelpLink}\n");
-            Console.WriteLine("{0} in {1}", e.Message, e.TargetSite);
-        }
     }
-
 }

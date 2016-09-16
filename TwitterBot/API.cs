@@ -22,7 +22,6 @@ namespace TwitterBot
 
         private API()
 		{
-			_logs = Logs.GetLogsClass();
 			_tokens.AccessToken = "";
 			_tokens.AccessTokenSecret = "";
 			_tokens.ConsumerKey = "";
@@ -186,7 +185,7 @@ namespace TwitterBot
 
 
 			Console.WriteLine("{0} => {1}", DateTime.Now, "Followed " + count + " people.");
-			_logs.WriteLog("log.txt", "Followed " + count + " people.");
+			_logs.WriteLog("Followed " + count + " people.");
 		}
 
 		/// <summary>
@@ -198,8 +197,8 @@ namespace TwitterBot
 			//апдейтим статус переданный в аргументе
 			Limiter();
 			TwitterStatus.Update(_tokens, status);
-			_logs.WriteStatusLog(status + "\n");
-			_logs.WriteLog("log.txt", "Updating status => " + status);
+			_logs.WriteStatusLog(status);
+			_logs.WriteLog("Updating status => " + status);
 			Console.WriteLine("{0} => {1}", DateTime.Now, status);
 		}
 
@@ -218,18 +217,18 @@ namespace TwitterBot
 				var options = new SearchOptions { ResultType = SearchOptionsResultType.Mixed, NumberPerPage = 50 };
 				Limiter();
 				var tweetSearch = TwitterSearch.Search(_tokens, "\"я " + query + "\"", options);
-				_logs.WriteLog("log.txt", "Ищем статус по слову " + query);
-				_logs.WriteLog("log.txt", "Всего статусов: " + tweetSearch.ResponseObject.Count);
+				_logs.WriteLog("Ищем статус по слову " + query);
+				_logs.WriteLog("Всего статусов: " + tweetSearch.ResponseObject.Count);
 
 				//фильтруем реплаи, ссылки и хэштеги
 			    validStatuses.AddRange(tweetSearch.ResponseObject
 			                    .Where(item => !(item.Text.Contains('@') || item.Text.Contains('#') || item.Text.Contains("http")))
 			                    .Select(item => item.Text));
-			    _logs.WriteLog("log.txt", "Валидных статусов: " + validStatuses.Count);
+			    _logs.WriteLog("Валидных статусов: " + validStatuses.Count);
 			}
 			else
 			{
-				_logs.WriteLog("log.txt", "query is NULL!");
+				_logs.WriteLog("query is NULL!");
 
 			}
 			return validStatuses;
@@ -273,7 +272,7 @@ namespace TwitterBot
 					validStatuses.Remove(t);
 				}
 			}
-			_logs.WriteLog("log.txt", "Валидных новых статусов: " + validAndNotPosted.Count);
+			_logs.WriteLog("Валидных новых статусов: " + validAndNotPosted.Count);
 
 			return validAndNotPosted[_random.Next(validAndNotPosted.Count)];
 		}
@@ -306,7 +305,7 @@ namespace TwitterBot
 				{
 					//если сюда попали, значит лимит действительно закончился. спим.
 					Console.WriteLine("Rate limit exceeded, sleeping until " + apiStatus.ResponseObject.ResetTime);
-					_logs.WriteLog("log.txt", "Rate limit exceeded, sleeping until " + apiStatus.ResponseObject.ResetTime);
+					_logs.WriteLog("Rate limit exceeded, sleeping until " + apiStatus.ResponseObject.ResetTime);
 					Thread.Sleep(apiStatus.ResponseObject.ResetTime - DateTime.Now);
 
 					//проснулись. опять пощупали лимит, записали в переменную
@@ -315,7 +314,7 @@ namespace TwitterBot
 					while (_remainingLimit == 0)
 					{
 						//лимит все еще не обновился. спим, но каждую минуту проверяем
-						_logs.WriteLog("log.txt", "Лимит не обновился. Спим одну минуту");
+						_logs.WriteLog("Лимит не обновился. Спим одну минуту");
 						Thread.Sleep(TimeSpan.FromMinutes(1));
 						apiStatus = TwitterRateLimitStatus.GetStatus(_tokens);
 						_remainingLimit = apiStatus.ResponseObject.RemainingHits;
@@ -354,15 +353,13 @@ namespace TwitterBot
 						count++;
 					}
 				}
-				_logs.WriteLog("log.txt", "Unfollowed " + count + " users.");
+				_logs.WriteLog("Unfollowed " + count + " users.");
 				Console.WriteLine("{0} => {1}", DateTime.Now, "Unfollowed " + count + " users.");
 			}
 			catch (Exception e)
 			{
-				_logs.WriteLog("log.txt", "Exception was thrown.");
-				_logs.WriteLog("errorlog.txt", string.Format("\nMessage: {0}\n TargetSite: {1}\n Data: {2}\n StackTrace: {3}\n InnerException: {4}" +
-														   "\n Source: {5}\n Data: {6}\n GetBaseException: {7}\n HelpLink: {8}\n",
-				   e.Message, e.TargetSite, e.Data, e.StackTrace, e.InnerException, e.Source, e.Data, e.GetBaseException(), e.HelpLink));
+				_logs.WriteLog("Exception was thrown.");
+				_logs.WriteErrorLog(e);
 
 				throw;
 			}

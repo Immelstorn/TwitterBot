@@ -1,90 +1,68 @@
 ﻿using System;
-using System.IO;
 
+using TwitterBot.DB;
+using TwitterBot.DB.Entities;
 
 namespace TwitterBot
 {
-    class Logs
+    public class Logs
     {
-        private static Logs _instance;
-        private static object _syncLock = new object();
 
-        private Logs()
+        internal void WriteStatusLog(string status)
         {
-            if (!(File.Exists("log.txt")))
+            using (var db = new TwitterBotContext())
             {
-                File.Create("log.txt");
+                var log = new StatusLog();
+                log.Message = status;
+                db.StatusLogs.Add(log);
+                db.SaveChanges();
             }
-            if (!(File.Exists("StatusLog.txt")))
-            {
-                File.Create("StatusLog.txt");
-            }
-            if (!(File.Exists("errorlog.txt")))
-            {
-                File.Create("errorlog.txt");
-            }
-			if (!(File.Exists("blacklist.txt")))
-			{
-				File.Create("blacklist.txt");
-			}
         }
 
-        //синглтон
-        public static Logs GetLogsClass()
+        internal void WriteLog(string message)
         {
-            if (_instance == null)
+            using (var db = new TwitterBotContext())
             {
-                lock (_syncLock)
-                {
-                    if (_instance == null)
-                    {
-                        _instance = new Logs();
-                    }
-                }
+                var log = new Log();
+                log.Message = message;
+                db.Logs.Add(log);
+                db.SaveChanges();
             }
-            return _instance;
         }
 
-        /// <summary>
-        /// Writes the status log.
-        /// </summary>
-        /// <param name="logstring">The logstring.</param>
-        public void WriteStatusLog(string logstring)
+
+        internal void WriteErrorLog(Exception e)
         {
-            var fi = new FileInfo("StatusLog.txt");
-            if ((DateTime.Now - fi.CreationTime).Days >= 365)
+            var ex = e;
+            do
             {
-                File.Delete("StatusLog.txt");
-                File.Create("StatusLog.txt");
+                WriteErrorLog(ex.Message);
+                ex = e.InnerException;
             }
-            File.AppendAllText("StatusLog.txt", logstring);
+            while (ex != null);
         }
 
-        /// <summary>
-        /// Writes log.
-        /// </summary>
-        /// <param name="file">The file.</param>
-        /// <param name="logstring">The logstring.</param>
-        public void WriteLog(string file, string logstring)
+        private void WriteErrorLog(string message)
         {
-            var fi = new FileInfo(file);
-            if (fi.Length > 10485760)
+            using (var db = new TwitterBotContext())
             {
-                //если больше 10 мб то бекапим лог и создаем новый
-                File.Replace(file, file + DateTime.Now, file + "old");
-                File.AppendAllText(file, "Old log was renamed to " + file + DateTime.Now);
+                var log = new ErrorLog();
+                log.Message = message;
+                db.Errors.Add(log);
+                db.SaveChanges();
             }
-
-            File.AppendAllText(file, $"{DateTime.Now} => {logstring}\n");
         }
 
-		/// <summary>
-		/// Writes the black list.
-		/// </summary>
-		/// <param name="user">The user.</param>
-		public void WriteBlackList(decimal user)
+
+        internal void WriteBlackList(decimal user)
 		{
-		    File.AppendAllText("blacklist.txt", user + "\n");
-		}
+            using (var db = new TwitterBotContext())
+            {
+                var blackList = new BlackList();
+                blackList.UserId = user;
+                db.BlackLists.Add(blackList);
+                db.SaveChanges();
+            }
+        }
     }
 }
