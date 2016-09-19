@@ -29,9 +29,17 @@ namespace TwitterBot.Jobs
 
         public void Execute(IJobExecutionContext context)
         {
-            Logs.WriteLog("Starting to execute twitter job");
-            RunTask();
-            ScheduleTwitterJob();
+            try
+            {
+
+                Logs.WriteLog("Starting to execute twitter job");
+                RunTask();
+                ScheduleTwitterJob();
+            }
+            catch(Exception e)
+            {
+                Logs.WriteErrorLog(e);
+            }
         }
 
         public static void ScheduleTwitterJob()

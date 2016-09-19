@@ -21,7 +21,14 @@ namespace TwitterBot
 
         public static void Main()
         {
-            TwitterJob.ScheduleTwitterJob();
+            try
+            {
+                TwitterJob.ScheduleTwitterJob();
+            }
+            catch(Exception e)
+            {
+               _logs.WriteErrorLog(e);
+            }
         }
 
        
