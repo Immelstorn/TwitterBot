@@ -7,7 +7,6 @@ namespace TwitterBot
 {
     internal class Logs
     {
-
         internal void WriteStatusLog(string status)
         {
             using (var db = new TwitterBotContext())

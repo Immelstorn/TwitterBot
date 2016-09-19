@@ -54,6 +54,7 @@
     <Compile Include="Entities\ErrorLog.cs" />
     <Compile Include="Entities\Log.cs" />
     <Compile Include="Entities\StatusLog.cs" />
+    <Compile Include="Entities\UpdateTime.cs" />
     <Compile Include="Migrations\201609161136185_init.cs" />
     <Compile Include="Migrations\201609161136185_init.Designer.cs">
       <DependentUpon>201609161136185_init.cs</DependentUpon>
@@ -61,6 +62,10 @@
     <Compile Include="Migrations\201609161159110_AddLogTables.cs" />
     <Compile Include="Migrations\201609161159110_AddLogTables.Designer.cs">
       <DependentUpon>201609161159110_AddLogTables.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201609191246050_AddUpdateTimeTable.cs" />
+    <Compile Include="Migrations\201609191246050_AddUpdateTimeTable.Designer.cs">
+      <DependentUpon>201609191246050_AddUpdateTimeTable.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="TwitterBotContext.cs" />
@@ -76,6 +81,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201609161159110_AddLogTables.resx">
       <DependentUpon>201609161159110_AddLogTables.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201609191246050_AddUpdateTimeTable.resx">
+      <DependentUpon>201609191246050_AddUpdateTimeTable.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

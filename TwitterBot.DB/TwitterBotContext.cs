@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data.Entity;
-using System.Linq;
-using System.Text;
+﻿using System.Data.Entity;
 
 using TwitterBot.DB.Entities;
 
@@ -18,6 +13,7 @@ namespace TwitterBot.DB
         public DbSet<StatusLog> StatusLogs { get; set; }
         public DbSet<BlackList> BlackLists { get; set; }
         public DbSet<ErrorLog> Errors { get; set; }
+        public DbSet<UpdateTime> UpdateTimes{ get; set; }
 
     }
 }

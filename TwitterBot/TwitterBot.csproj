@@ -108,10 +108,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API.cs" />
+    <Compile Include="Jobs\GenerateUpdateTimesJob.cs" />
     <Compile Include="Logs.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TwitterJob.cs" />
+    <Compile Include="Jobs\TwitterJob.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config">

@@ -315,7 +315,7 @@ namespace TwitterBot
 			var day = TimeSpan.FromHours(13);
 			for (var i = 0; i < 5; i++)
 			{
-				var rnd = _random.Next(int.Parse(day.TotalSeconds.ToString()));
+				var rnd = _random.Next(Convert.ToInt32(day.TotalSeconds));
 				updateTimes.Add(DateTime.Parse("10:00") + TimeSpan.FromSeconds(rnd));
 			}
 			updateTimes.Sort();
