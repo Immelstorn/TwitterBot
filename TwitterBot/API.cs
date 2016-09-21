@@ -2,7 +2,11 @@
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Threading;
+
+using LinqToTwitter;
+
 using Twitterizer;
 
 namespace TwitterBot
@@ -10,11 +14,23 @@ namespace TwitterBot
 	class API
     {
         #region vars
+        private static readonly SingleUserAuthorizer Auth = new SingleUserAuthorizer
+        {
+            CredentialStore = new SingleUserInMemoryCredentialStore
+            {
+                ConsumerKey = ConfigurationManager.AppSettings["consumerKey"],
+                ConsumerSecret = ConfigurationManager.AppSettings["consumerSecret"],
+                AccessToken = ConfigurationManager.AppSettings["accessToken"],
+                AccessTokenSecret = ConfigurationManager.AppSettings["accessTokenSecret"]
+            }
+        };
+        private const string Username = "svittex";
+        private TwitterContext _twitterCtx;
+
+
 
         private readonly OAuthTokens _tokens = new OAuthTokens();
-		private static API _instance;
-		private static object _syncLock = new object();
-		private readonly Logs _logs;
+		private readonly Logs _logs = new Logs();
 		private readonly Random _random = new Random();
 		private int _remainingLimit;
 		private int _usersToFollow = 50;
@@ -47,36 +63,16 @@ namespace TwitterBot
         };
         #endregion
 
-        private API()
-		{
-			_tokens.AccessToken = "";
-			_tokens.AccessTokenSecret = "";
-			_tokens.ConsumerKey = "";
-			_tokens.ConsumerSecret = "";
-			var apiStatus = TwitterRateLimitStatus.GetStatus(_tokens);
-			_remainingLimit = apiStatus.ResponseObject.RemainingHits;
-		}
+        public API()
+        {
+            _twitterCtx = new TwitterContext(Auth);
+        }
 
-		public static API GetApi()
-		{
-			if (_instance == null)
-			{
-				lock (_syncLock)
-				{
-					if (_instance == null)
-					{
-						_instance = new API();
-					}
-				}
-			}
-			return _instance;
-		}
-
-		/// <summary>
-		/// Retweets  of me.
-		/// </summary>
-		/// <returns></returns>
-		public IEnumerable<decimal> RetweetsOfMe()
+        /// <summary>
+        /// Retweets  of me.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<decimal> RetweetsOfMe()
 		{
 			var users = new List<decimal>();
 			//получить список юзеров которые меня ретвитнули
@@ -356,40 +352,72 @@ namespace TwitterBot
 			_remainingLimit -= 1;
 		}
 
-		/// <summary>
-		/// Clears the followings.
-		/// </summary>
+        private List<ulong> GetFriendship(FriendshipType type)
+        {
+            var followers = new List<ulong>();
+            long cursor = -1;
+            do
+            {
+                var friendship = _twitterCtx.Friendship.SingleOrDefault(f => f.Type == type && f.ScreenName == Username && f.Cursor == cursor);
+                if (friendship?.IDInfo?.IDs != null)
+                {
+                    followers.AddRange(friendship.IDInfo.IDs);
+                    cursor = friendship.CursorMovement.Next;
+                }
+            }
+            while (cursor != 0);
+
+            return followers;
+        }
+
+        private int CheckLimit()
+        {
+            var limit = _twitterCtx.Help.Where(h => h.Type == HelpType.RateLimits).ToList();
+            return limit.Select(l => l.RateLimits["application"][0].Remaining).FirstOrDefault();
+        }
+
 		public void ClearFollowings()
 		{
-			try
-			{
+//		    if(DateTime.Now.DayOfWeek == DayOfWeek.Sunday)
+		    {
+                try
+                {
+                    var followers = GetFriendship(FriendshipType.FollowerIDs);
+                    var followings = GetFriendship(FriendshipType.FriendIDs);
+                    var count = 0;
 
-				//тупо сравниваем два списка - фолловерс и фолловинг, если кого-то из второго списка нет в первом - нахуй пошел в черный список.
-				var count = 0;
-				Limiter();
-				var followers = TwitterFriendship.FollowersIds(_tokens);
-				Limiter();
-				var iFollow = TwitterFriendship.FriendsIds(_tokens);
-				foreach (var item in iFollow.ResponseObject)
-				{
-					if (!(followers.ResponseObject.Contains<decimal>(item)))
-					{
-						Limiter();
-						TwitterFriendship.Delete(_tokens, item);
-						_logs.WriteBlackList(item);
-						count++;
-					}
-				}
-				_logs.WriteLog("Unfollowed " + count + " users.");
-				Console.WriteLine("{0} => {1}", DateTime.Now, "Unfollowed " + count + " users.");
-			}
-			catch (Exception e)
-			{
-				_logs.WriteLog("Exception was thrown.");
-				_logs.WriteErrorLog(e);
+                    foreach (var id in followings)
+                    {
+                        if(!followers.Contains(id))
+                        {
+                            var user =  _twitterCtx.DestroyFriendshipAsync(id).Result;
+                            if (user?.Status != null)
+                            {
+                                _logs.WriteBlackList(id);
+                                count++;
+#if DEBUG
+                                Console.WriteLine(count);
+#endif
+                            }
+                            else
+                            {
+                                var limit = CheckLimit();
+                                _logs.WriteLog($"An error during unfollowing. Returned user is null. Limit is {limit}");
+                            }
+                        }
+                    }
 
-				throw;
-			}
+                    _logs.WriteLog($"Unfollowed {count} users");
+                }
+                catch (Exception e)
+                {
+                    var limit = CheckLimit();
+                    _logs.WriteLog($"Exception was thrown. Limit is {limit}");
+                    _logs.WriteErrorLog(e);
+
+                    throw;
+                }
+            }
 		}
 	}
 }

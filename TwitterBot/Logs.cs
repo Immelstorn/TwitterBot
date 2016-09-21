@@ -53,12 +53,12 @@ namespace TwitterBot
         }
 
 
-        internal void WriteBlackList(decimal user)
+        internal void WriteBlackList(ulong user)
 		{
             using (var db = new TwitterBotContext())
             {
                 var blackList = new BlackList();
-                blackList.UserId = user;
+                blackList.UserId = Convert.ToInt64(user);
                 db.BlackLists.Add(blackList);
                 db.SaveChanges();
             }

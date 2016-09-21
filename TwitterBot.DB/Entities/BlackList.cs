@@ -3,6 +3,6 @@
     public class BlackList
     {
         public int Id { get; set; }
-        public decimal UserId { get; set; }
+        public long UserId { get; set; }
     }
 }

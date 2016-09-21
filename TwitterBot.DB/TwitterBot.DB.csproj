@@ -67,6 +67,10 @@
     <Compile Include="Migrations\201609191246050_AddUpdateTimeTable.Designer.cs">
       <DependentUpon>201609191246050_AddUpdateTimeTable.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201609211157174_ChangeTypeOfuserId.cs" />
+    <Compile Include="Migrations\201609211157174_ChangeTypeOfuserId.Designer.cs">
+      <DependentUpon>201609211157174_ChangeTypeOfuserId.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="TwitterBotContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -84,6 +88,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201609191246050_AddUpdateTimeTable.resx">
       <DependentUpon>201609191246050_AddUpdateTimeTable.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201609211157174_ChangeTypeOfuserId.resx">
+      <DependentUpon>201609211157174_ChangeTypeOfuserId.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
