@@ -1,13 +1,11 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Threading;
 
 using LinqToTwitter;
 
-using Twitterizer;
+using TwitterBot.DB;
 
 namespace TwitterBot
 {
@@ -25,15 +23,12 @@ namespace TwitterBot
             }
         };
         private const string Username = "svittex";
-        private TwitterContext _twitterCtx;
-
-
-
-        private readonly OAuthTokens _tokens = new OAuthTokens();
+        private readonly TwitterContext _twitterCtx;
+        private Dictionary<FriendshipType, List<ulong>> _friendshipCache = new Dictionary<FriendshipType, List<ulong>>();
+        private int _limitCache = 0;
 		private readonly Logs _logs = new Logs();
 		private readonly Random _random = new Random();
-		private int _remainingLimit;
-		private int _usersToFollow = 50;
+        private const int _usersToFollow = 15;
 
         private List<string> _wordsToSearch = new List<string> {
             "закрыла",
@@ -68,318 +63,57 @@ namespace TwitterBot
             _twitterCtx = new TwitterContext(Auth);
         }
 
-        /// <summary>
-        /// Retweets  of me.
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<decimal> RetweetsOfMe()
-		{
-			var users = new List<decimal>();
-			//получить список юзеров которые меня ретвитнули
-			Limiter();
-			var options = new RetweetsOfMeOptions { Count = 25 };
+        public void UpdateStatus()
+        {
+            var status = StatusToPost();
+            //var tweet = twitterCtx.TweetAsync(status).Result;
+            Limiter();
+            var tweet = _twitterCtx.NewDirectMessageAsync("Immelstorn", status).Result;
+            if (tweet != null)
+            {
+                _logs.WriteStatusLog(status);
+                _logs.WriteLog($"Tweet sent: {tweet.ID}");
+            }
+            else
+            {
+                _logs.WriteLog($"Tweet is null, limit is {_limitCache}");
+            }
+        }
 
-			//получаем список ретвитнутых твитов
-			Limiter();
-			var retweetsOfMe = TwitterTimeline.RetweetsOfMe(_tokens, options);
-
-			//смотрим кто ретвитнул этот твит и добавляем его в список юзеров
-			foreach (var item in retweetsOfMe.ResponseObject)
-			{
-				Limiter();
-				var thisTweetRetweets = TwitterStatus.Retweets(_tokens, item.Id);
-				users.AddRange(thisTweetRetweets.ResponseObject.Select(rt => rt.User.Id));
-			}
-			return users;
-		}
-
-		/// <summary>
-		/// Mentions to me.
-		/// </summary>
-		/// <returns></returns>
-		public IEnumerable<decimal> MentionsToMe()
-		{
-			var users = new List<decimal>();
-
-			//получить список юзеров которые мне написали
-			Limiter();
-			var mentionsToMe = TwitterTimeline.Mentions(_tokens);
-			if (mentionsToMe.ResponseObject != null)
-			{
-				users.AddRange(mentionsToMe.ResponseObject.Select(item => item.User.Id));
-			}
-			return users;
-		}
-
-		/// <summary>
-		/// Users to follow.
-		/// </summary>
-		/// <returns></returns>
-		public IEnumerable<decimal> UsersToFollow()
-		{
-			var users = new List<decimal>();
-			var myfollowers = new List<decimal>();
-
-			//получаем список из случайных юзеров, которых фолловят мои фолловеры. _usersToFollow штук.
-			Limiter();
-			var user = TwitterUser.Show("svittex");
-			if (user.ResponseObject != null)
-			{
-				var options = new UsersIdsOptions { ScreenName = "svittex" };
-				Limiter();
-				var followersResponse = TwitterFriendship.FollowersIds(_tokens, options);
-				var random = new Random();
-
-				//choose _usersToFollow of my followers
-				for (var i = 0; i < _usersToFollow; i++)
-				{
-					myfollowers.Add(followersResponse.ResponseObject[random.Next(followersResponse.ResponseObject.Count)]);
-				}
-
-				//random choose one following of each of my followers chosen
-				foreach (var item in myfollowers)
-				{
-					Limiter();
-					options.ScreenName = TwitterUser.Show(item).ResponseObject.ScreenName;
-					Limiter();
-					followersResponse = TwitterFriendship.FriendsIds(_tokens, options);
-					var id = followersResponse.ResponseObject[random.Next(followersResponse.ResponseObject.Count)];
-					users.Add(id);
-				}
-			}
-			return users;
-		}
-
-		/// <summary>
-		/// Whoes the followed me.
-		/// </summary>
-		/// <returns></returns>
-		public IEnumerable<decimal> WhoFollowedMe()
-		{
-			//получаем список юзеров которые меня зафолловили
-			var options = new UsersIdsOptions { ScreenName = "" };
-			Limiter();
-			var followersResponse = TwitterFriendship.FollowersIds(_tokens, options);
-			return followersResponse.ResponseObject.ToList();
-		}
-
-		/// <summary>
-		/// Follows the specified users.
-		/// </summary>
-		/// <param name="users">The users.</param>
-		public void Follow(IEnumerable<decimal> users, bool whoFollowedMe = false)
-		{
-			var count = 0;
-
-			//фолловим юзеров из переданного списка
-			Limiter();
-
-			//взяли моих фолловингов
-			var iFollow = TwitterFriendship.FriendsIds(_tokens);
-
-			//проверяли ли фолловлю ли я юзера из переданного списка и нет ли его в черном списке, если нет - фолловить
-			var blacklist = File.ReadAllLines("blacklist.txt");
-
-			//если пришли из whoFollowedMe то фолловим не оглядываясь на черный список
-			if (whoFollowedMe)
-			{
-				foreach (var item in users)
-				{
-					if (!(iFollow.ResponseObject.Contains<decimal>(item)))
-					{
-						Limiter();
-						TwitterFriendship.Create(_tokens, item);
-						count++;
-					}
-				}
-			}
-			else
-			{
-				foreach (var item in users)
-				{
-					if (!(iFollow.ResponseObject.Contains<decimal>(item)) && !(blacklist.Contains<string>(item.ToString())))
-					{
-						Limiter();
-						TwitterFriendship.Create(_tokens, item);
-						count++;
-					}
-				}
-			}
-
-
-			Console.WriteLine("{0} => {1}", DateTime.Now, "Followed " + count + " people.");
-			_logs.WriteLog("Followed " + count + " people.");
-		}
-
-		/// <summary>
-		/// Updates the status.
-		/// </summary>
-		/// <param name="status">The status.</param>
-		public void UpdateStatus(string status)
-		{
-			//апдейтим статус переданный в аргументе
-			Limiter();
-			TwitterStatus.Update(_tokens, status);
-			_logs.WriteStatusLog(status);
-			_logs.WriteLog("Updating status => " + status);
-			Console.WriteLine("{0} => {1}", DateTime.Now, status);
-		}
-
-		/// <summary>
-		/// Searches for status.
-		/// </summary>
-		/// <param name="query">The query.</param>
-		/// <returns></returns>
-		private List<string> SearchForStatus(string query)
-		{
-			var validStatuses = new List<string>();
-
-			if (query != null)
-			{
-				//ищем список статусов чтоб запостить
-				var options = new SearchOptions { ResultType = SearchOptionsResultType.Mixed, NumberPerPage = 50 };
-				Limiter();
-				var tweetSearch = TwitterSearch.Search(_tokens, "\"я " + query + "\"", options);
-				_logs.WriteLog("Ищем статус по слову " + query);
-				_logs.WriteLog("Всего статусов: " + tweetSearch.ResponseObject.Count);
-
-				//фильтруем реплаи, ссылки и хэштеги
-			    validStatuses.AddRange(tweetSearch.ResponseObject
-			                    .Where(item => !(item.Text.Contains('@') || item.Text.Contains('#') || item.Text.Contains("http")))
-			                    .Select(item => item.Text));
-			    _logs.WriteLog("Валидных статусов: " + validStatuses.Count);
-			}
-			else
-			{
-				_logs.WriteLog("query is NULL!");
-
-			}
-			return validStatuses;
-		}
-
-		/// <summary>
-		/// Statuses to post.
-		/// </summary>
-		/// <returns></returns>
-		public string StatusToPost()
-		{
-			//выбираем статус для постинга
-
-			//получили список фраз для поиска
-		    var wordsForSearch = _wordsToSearch.GetRange(0, _wordsToSearch.Count);
-			var validStatuses = new List<string>();
-			var previousStatuses = File.ReadAllLines("StatusLog.txt");
-			var isNew = false;
-			var validAndNotPosted = new List<string>();
-			while (!isNew)
-			{
-				while (validStatuses.Count == 0)
-				{
-					//ищем случайную фразу пока не получим больше 0 статусов
-
-					var r = _random.Next(wordsForSearch.Count - 1);
-					validStatuses = SearchForStatus(wordsForSearch[r]);
-					wordsForSearch.RemoveAt(r);
-				}
-
-				var temp = new string[validStatuses.Count];
-				validStatuses.CopyTo(temp);
-				foreach (var t in temp)
-				{
-					//проверяем, не постилось ли раньше
-					if (!previousStatuses.Contains(t))
-					{
-						validAndNotPosted.Add(t);
-						isNew = true;
-					}
-					validStatuses.Remove(t);
-				}
-			}
-			_logs.WriteLog("Валидных новых статусов: " + validAndNotPosted.Count);
-
-			return validAndNotPosted[_random.Next(validAndNotPosted.Count)];
-		}
-
-		/// <summary>
-		/// Gets the update times.
-		/// </summary>
-		/// <returns></returns>
-		public List<DateTime> GetUpdateTimes()
-		{
-			//получаем 5 точек апдейта статуса с 10.00 до 23.00
-			var updateTimes = new List<DateTime>();
-			var day = TimeSpan.FromHours(13);
-			for (var i = 0; i < 5; i++)
-			{
-				var rnd = _random.Next(Convert.ToInt32(day.TotalSeconds));
-				updateTimes.Add(DateTime.Parse("10:00") + TimeSpan.FromSeconds(rnd));
-			}
-			updateTimes.Sort();
-			return updateTimes;
-		}
-
-		private void Limiter()
-		{
-			if (_remainingLimit == 0)
-			{
-				//если сюда попали, значит локальный счетчик обнулился. надо проверить действительно ли закончился лимит.
-				var apiStatus = TwitterRateLimitStatus.GetStatus(_tokens);
-				if (apiStatus.ResponseObject.RemainingHits == 0)
-				{
-					//если сюда попали, значит лимит действительно закончился. спим.
-					Console.WriteLine("Rate limit exceeded, sleeping until " + apiStatus.ResponseObject.ResetTime);
-					_logs.WriteLog("Rate limit exceeded, sleeping until " + apiStatus.ResponseObject.ResetTime);
-					Thread.Sleep(apiStatus.ResponseObject.ResetTime - DateTime.Now);
-
-					//проснулись. опять пощупали лимит, записали в переменную
-					apiStatus = TwitterRateLimitStatus.GetStatus(_tokens);
-					_remainingLimit = apiStatus.ResponseObject.RemainingHits;
-					while (_remainingLimit == 0)
-					{
-						//лимит все еще не обновился. спим, но каждую минуту проверяем
-						_logs.WriteLog("Лимит не обновился. Спим одну минуту");
-						Thread.Sleep(TimeSpan.FromMinutes(1));
-						apiStatus = TwitterRateLimitStatus.GetStatus(_tokens);
-						_remainingLimit = apiStatus.ResponseObject.RemainingHits;
-					}
-				}
-				else
-				{
-					//если тут, значит был сбой и просто приводим переменную в соответствие с реальным положением дел
-					_remainingLimit = apiStatus.ResponseObject.RemainingHits;
-				}
-			}
-			_remainingLimit -= 1;
-		}
+        public void ClearCache()
+        {
+           _friendshipCache = new Dictionary<FriendshipType, List<ulong>>();
+            _limitCache = 0;
+        }
 
         private List<ulong> GetFriendship(FriendshipType type)
         {
-            var followers = new List<ulong>();
-            long cursor = -1;
-            do
+            if(!_friendshipCache.ContainsKey(type) || _friendshipCache[type] == null || _friendshipCache[type].Count == 0)
             {
-                var friendship = _twitterCtx.Friendship.SingleOrDefault(f => f.Type == type && f.ScreenName == Username && f.Cursor == cursor);
-                if (friendship?.IDInfo?.IDs != null)
+                var followers = new List<ulong>();
+                long cursor = -1;
+                do
                 {
-                    followers.AddRange(friendship.IDInfo.IDs);
-                    cursor = friendship.CursorMovement.Next;
+                    Limiter();
+                    var friendship = _twitterCtx.Friendship.SingleOrDefault(f => f.Type == type && f.ScreenName == Username && f.Cursor == cursor);
+                    if(friendship?.IDInfo?.IDs != null)
+                    {
+                        followers.AddRange(friendship.IDInfo.IDs);
+                        cursor = friendship.CursorMovement.Next;
+                    }
                 }
+                while(cursor != 0);
+
+                _friendshipCache[type] = followers;
             }
-            while (cursor != 0);
 
-            return followers;
+            return _friendshipCache[type];
         }
 
-        private int CheckLimit()
+        public void ClearFollowings()
         {
-            var limit = _twitterCtx.Help.Where(h => h.Type == HelpType.RateLimits).ToList();
-            return limit.Select(l => l.RateLimits["application"][0].Remaining).FirstOrDefault();
-        }
-
-		public void ClearFollowings()
-		{
-//		    if(DateTime.Now.DayOfWeek == DayOfWeek.Sunday)
-		    {
+            if (DateTime.Now.DayOfWeek == DayOfWeek.Sunday)
+            {
                 try
                 {
                     var followers = GetFriendship(FriendshipType.FollowerIDs);
@@ -388,9 +122,10 @@ namespace TwitterBot
 
                     foreach (var id in followings)
                     {
-                        if(!followers.Contains(id))
+                        if (!followers.Contains(id))
                         {
-                            var user =  _twitterCtx.DestroyFriendshipAsync(id).Result;
+                            Limiter();
+                            var user = _twitterCtx.DestroyFriendshipAsync(id).Result;
                             if (user?.Status != null)
                             {
                                 _logs.WriteBlackList(id);
@@ -401,8 +136,7 @@ namespace TwitterBot
                             }
                             else
                             {
-                                var limit = CheckLimit();
-                                _logs.WriteLog($"An error during unfollowing. Returned user is null. Limit is {limit}");
+                                _logs.WriteLog($"An error during unfollowing. Returned user is null. Limit is {_limitCache}");
                             }
                         }
                     }
@@ -411,13 +145,170 @@ namespace TwitterBot
                 }
                 catch (Exception e)
                 {
-                    var limit = CheckLimit();
-                    _logs.WriteLog($"Exception was thrown. Limit is {limit}");
+                    _logs.WriteLog($"Exception was thrown. Limit is {_limitCache}");
                     _logs.WriteErrorLog(e);
 
                     throw;
                 }
             }
-		}
+        }
+
+        public string StatusToPost()
+        {
+            List<string> previousStatuses;
+            using(var db = new TwitterBotContext())
+            {
+                previousStatuses = db.StatusLogs.Select(s => s.Message).ToList();
+            }
+
+            var wordsForSearch = _wordsToSearch.GetRange(0, _wordsToSearch.Count);
+
+
+            var validStatuses = new List<string>();
+            var isNew = false;
+            var validAndNotPosted = new List<string>();
+
+            while(!isNew)
+            {
+                while(validStatuses.Count == 0)
+                {
+                    var r = _random.Next(wordsForSearch.Count - 1);
+                    validStatuses = SearchForStatus(wordsForSearch[r]);
+                    wordsForSearch.RemoveAt(r);
+                }
+
+                var temp = new string[validStatuses.Count];
+                validStatuses.CopyTo(temp);
+                foreach(var t in temp)
+                {
+                    if(!previousStatuses.Contains(t))
+                    {
+                        validAndNotPosted.Add(t);
+                        isNew = true;
+                    }
+                    validStatuses.Remove(t);
+                }
+            }
+            _logs.WriteLog($"Valid and not posted count: {validAndNotPosted.Count}");
+
+            return validAndNotPosted[_random.Next(validAndNotPosted.Count - 1)];
+        }
+
+        private List<string> SearchForStatus(string query)
+        {
+            var validStatuses = new List<string>();
+            _logs.WriteLog($"Searching for status: {query}");
+            Limiter();
+            var searchResponse = _twitterCtx.Search.SingleOrDefault(s => s.Type == SearchType.Search
+                                                                        && s.ResultType == ResultType.Mixed
+                                                                        && s.Query == query);
+            if (searchResponse?.Statuses != null)
+            {
+                _logs.WriteLog($"Found {searchResponse.Statuses.Count} statuses");
+                validStatuses.AddRange(searchResponse.Statuses
+                                               .Where(item => !(item.Text.Contains('@') || item.Text.Contains('#') || item.Text.Contains("http")))
+                                               .Select(item => item.Text));
+                _logs.WriteLog("Valid " + validStatuses.Count);
+            }
+
+            return validStatuses;
+        }
+
+        public void Follow(IEnumerable<ulong> users, bool whoFollowedMe = false)
+        {
+            var followings = GetFriendship(FriendshipType.FriendIDs);
+
+            List<long> blacklist;
+            using (var db = new TwitterBotContext())
+            {
+                blacklist = db.BlackLists.Select(s => s.UserId).ToList();
+            }
+
+            //если пришли из whoFollowedMe то фолловим не оглядываясь на черный список
+            var usersToFollow = users.Where(item => !followings.Contains(item));
+
+            if (!whoFollowedMe)
+            {
+                usersToFollow = usersToFollow.Where(item => !blacklist.Contains((long)item)).ToList();
+            }
+
+            FollowUsers(usersToFollow);
+        }
+
+        private void FollowUsers(IEnumerable<ulong> usersToFollow)
+        {
+            foreach (var user in usersToFollow)
+            {
+                Limiter();
+                var result = _twitterCtx.CreateFriendshipAsync(user, false).Result;
+                if (result?.Status == null)
+                {
+                    _logs.WriteLog($"An error during following. Returned user is null. Limit is {_limitCache}");
+                }
+            }
+            _logs.WriteLog($"Followed {usersToFollow} users");
+        }
+
+        public IEnumerable<ulong> UsersToFollow()
+        {
+            var users = new List<ulong>();
+            var myfollowers = new List<ulong>();
+
+            //получаем список из случайных юзеров, которых фолловят мои фолловеры. _usersToFollow штук.
+            var followers = GetFriendship(FriendshipType.FollowerIDs);
+
+            for (var i = 0; i < _usersToFollow; i++)
+            {
+                myfollowers.Add(followers[_random.Next(followers.Count)]);
+            }
+
+            //random choose one following of each of my followers chosen
+            foreach (var item in myfollowers)
+            {
+                var friendship = _twitterCtx.Friendship.SingleOrDefault(f => f.Type == FriendshipType.FriendIDs && f.UserID == item.ToString());
+                if (friendship?.IDInfo?.IDs != null)
+                {
+                    users.Add(friendship.IDInfo.IDs[_random.Next(friendship.IDInfo.IDs.Count)]);
+                }
+            }
+            return users;
+        }
+
+        public IEnumerable<ulong> RetweetsOfMe()
+        {
+            Limiter();
+            var retweetsOfMe = _twitterCtx.Status.Where(s => s.Type == StatusType.RetweetsOfMe && s.Count == 25).ToList();
+            return retweetsOfMe.Select(item => item.UserID).ToList();
+        }
+
+        public IEnumerable<ulong> MentionsToMe()
+        {
+            Limiter();
+            var tweets = _twitterCtx.Status.Where(tweet => tweet.Type == StatusType.Mentions && tweet.ScreenName == Username).ToList();
+            return tweets.Select(item => item.UserID);
+        }
+
+        public IEnumerable<ulong> WhoFollowedMe()
+        {
+            var followers = GetFriendship(FriendshipType.FollowerIDs);
+            var followings = GetFriendship(FriendshipType.FriendIDs);
+            return followers.Except(followings);
+        }
+
+        private void Limiter()
+        {
+            if (_limitCache == 0)
+            {
+                var limit = _twitterCtx.Help.Where(h => h.Type == HelpType.RateLimits).ToList();
+                _limitCache = limit.Select(l => l.RateLimits["application"][0].Remaining).FirstOrDefault();
+                if (_limitCache == 0)
+                {
+                    var _limitReset = limit.Select(l => l.RateLimits["application"][0].Reset).FirstOrDefault();
+                    //TODO: if limit is 0 I have to wait.
+                }
+            }
+
+            
+        }
 	}
 }

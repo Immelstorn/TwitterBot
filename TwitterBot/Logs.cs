@@ -29,7 +29,6 @@ namespace TwitterBot
             }
         }
 
-
         internal void WriteErrorLog(Exception e)
         {
             var ex = e;
@@ -51,7 +50,6 @@ namespace TwitterBot
                 db.SaveChanges();
             }
         }
-
 
         internal void WriteBlackList(ulong user)
 		{

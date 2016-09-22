@@ -13,7 +13,7 @@ namespace TwitterBot.Jobs
     {
 
       private static readonly Logs Logs = new Logs();
-
+      private static readonly API API = new API();
 
         public void Execute(IJobExecutionContext context)
         {
@@ -82,25 +82,27 @@ namespace TwitterBot.Jobs
         {
             try
             {
+                API.ClearCache();
+
                 //once per week cleaning followers
-                var api = new API();
-                api.ClearFollowings();
-
+                API.ClearFollowings();
+    
                 //update status
-                //follow 5 users 
-                //follow replied
-                //follow who followed
+                API.UpdateStatus();
 
-                //                var twitterCtx = new TwitterContext(Auth);
-                //              
-                //                var tweet = twitterCtx.TweetAsync(DateTime.Now.ToString()).Result;
-                //                var tweet = twitterCtx.NewDirectMessageAsync("Immelstorn", DateTime.UtcNow.ToString()).Result;
-                //                Console.WriteLine(tweet == null ? "an error occured, tweet is null" : string.Format("tweet.StatusID: {0}", tweet.ID));
-                //                Logs.WriteLog("Tweet sent");
+                //follow 15 users 
+                API.Follow(API.UsersToFollow());
+
+                //follow replied
+                API.Follow(API.MentionsToMe());
+                API.Follow(API.RetweetsOfMe());
+
+                //follow who followed
+                API.Follow(API.WhoFollowedMe());
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                Console.WriteLine("an error occured: {0}", e.InnerException?.Message ?? e.Message);
+                Logs.WriteErrorLog(e);
             }
         }
     }
