@@ -91,7 +91,7 @@ namespace TwitterBot.Jobs
                 API.UpdateStatus();
 
                 //follow 15 users 
-                API.Follow(API.UsersToFollow());
+                API.Follow(API.UsersToFollow(), false);
 
                 //follow replied
                 API.Follow(API.MentionsToMe());

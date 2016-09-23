@@ -12,8 +12,7 @@ namespace TwitterBot
         {
             try
             {
-//                TwitterJob.ScheduleTwitterJob();
-//                TwitterJob.RunTask();
+                TwitterJob.ScheduleTwitterJob();
             }
             catch(Exception e)
             {

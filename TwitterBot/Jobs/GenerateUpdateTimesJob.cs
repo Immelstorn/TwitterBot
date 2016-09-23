@@ -22,14 +22,28 @@ namespace TwitterBot.Jobs
                 _logs.WriteLog("Generating update times");
                 using(var db = new TwitterBotContext())
                 {
-                    var updateTimes = new List<DateTime>();
                     var day = TimeSpan.FromHours(13);
-                    for(var i = 0; i < 5; i++)
+                    var updateTimes = new List<DateTime>();
+                    var done = true;
+                    do
                     {
-                        var rnd = _random.Next(Convert.ToInt32(day.TotalSeconds));
-                        updateTimes.Add(DateTime.Parse("07:00") + TimeSpan.FromSeconds(rnd)); //I am using UTC time, so 07:00 is 10:00 for UA time
-                    }
-                    updateTimes.Sort();
+                        for (var i = 0; i < 5; i++)
+                        {
+                            var rnd = _random.Next(Convert.ToInt32(day.TotalSeconds));
+                            updateTimes.Add(DateTime.Parse("07:00") + TimeSpan.FromSeconds(rnd)); //I am using UTC time, so 07:00 is 10:00 for UA time
+                        }
+                        updateTimes.Sort();
+                        for(var i = 1; i < updateTimes.Count; i++)
+                        {
+                            if(updateTimes[i] - updateTimes[i - 1] < new TimeSpan(0, 0, 20, 0))
+                            {
+                                done = false;
+                                updateTimes = new List<DateTime>();
+                                break;
+                            }
+                        }
+                    } while (!done);
+                   
 
                     //remove if any
                     db.UpdateTimes.RemoveRange(db.UpdateTimes.ToList());

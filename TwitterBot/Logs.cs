@@ -35,7 +35,7 @@ namespace TwitterBot
             do
             {
                 WriteErrorLog(ex.Message);
-                ex = e.InnerException;
+                ex = ex.InnerException;
             }
             while (ex != null);
         }
