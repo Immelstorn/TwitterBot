@@ -88,7 +88,7 @@ namespace TwitterBot
                 if (tweet != null)
                 {
                     _logs.WriteStatusLog(status);
-                    _logs.WriteLog($"Tweet sent: {tweet.ID}");
+                    _logs.WriteLog($"Tweet sent: {tweet.StatusID}");
                 }
                 else
                 {
