@@ -71,6 +71,10 @@
     <Compile Include="Migrations\201609211157174_ChangeTypeOfuserId.Designer.cs">
       <DependentUpon>201609211157174_ChangeTypeOfuserId.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201609261328507_addStackTraceToErrorlog.cs" />
+    <Compile Include="Migrations\201609261328507_addStackTraceToErrorlog.Designer.cs">
+      <DependentUpon>201609261328507_addStackTraceToErrorlog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="TwitterBotContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -91,6 +95,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201609211157174_ChangeTypeOfuserId.resx">
       <DependentUpon>201609211157174_ChangeTypeOfuserId.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201609261328507_addStackTraceToErrorlog.resx">
+      <DependentUpon>201609261328507_addStackTraceToErrorlog.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

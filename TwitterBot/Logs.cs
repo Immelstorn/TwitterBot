@@ -34,18 +34,19 @@ namespace TwitterBot
             var ex = e;
             do
             {
-                WriteErrorLog(ex.Message);
+                WriteErrorLog(ex.Message, ex.StackTrace);
                 ex = ex.InnerException;
             }
             while (ex != null);
         }
 
-        private void WriteErrorLog(string message)
+        private void WriteErrorLog(string message, string stackTrace)
         {
             using (var db = new TwitterBotContext())
             {
                 var log = new ErrorLog();
                 log.Message = message;
+                log.StackTrace = stackTrace;
                 db.Errors.Add(log);
                 db.SaveChanges();
             }

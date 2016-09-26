@@ -42,7 +42,7 @@ namespace TwitterBot
         private readonly TwitterContext _twitterCtx;
         private readonly Logs _logs = new Logs();
 		private readonly Random _random = new Random();
-        private const int _usersToFollow = 15;
+        private const int _usersToFollow = 7;
 
         private readonly List<string> _wordsToSearch = new List<string> {
             "закрыла",
@@ -369,6 +369,7 @@ namespace TwitterBot
 
         private void Limiter(string limitName)
         {
+            _logs.WriteLog($"looking for limit for {limitName}");
             if(!_limitCache.ContainsKey(limitName) || _limitCache[limitName] == 0)
             {
                 var limit = _twitterCtx.Help.Where(h => h.Type == HelpType.RateLimits).ToList();
@@ -376,7 +377,8 @@ namespace TwitterBot
                 if(limitToCache != null)
                 {
                     _limitCache[limitName] = limitToCache.Remaining;
-                    if(_limitCache[limitName] == 0)
+                    _logs.WriteLog($"limitfrom web for {limitName} is {limitToCache.Remaining}");
+                    if (_limitCache[limitName] == 0)
                     {
                         _logs.WriteLog($"limit for {limitName} is 0");
                         var _limitReset = limit.Select(l => l.RateLimits["application"][0].Reset).FirstOrDefault();
@@ -393,6 +395,7 @@ namespace TwitterBot
                     _logs.WriteLog($"limitToCache is null for limit {limitName}");
                 }
             }
+            _logs.WriteLog($"limit from cache for {limitName} is {limitName}. Reducing.");
             _limitCache[limitName]--;
         }
 
