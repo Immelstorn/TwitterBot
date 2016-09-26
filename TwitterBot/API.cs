@@ -42,7 +42,7 @@ namespace TwitterBot
         private readonly TwitterContext _twitterCtx;
         private readonly Logs _logs = new Logs();
 		private readonly Random _random = new Random();
-        private const int _usersToFollow = 7;
+        private const int _usersToFollow = 5;
 
         private readonly List<string> _wordsToSearch = new List<string> {
             "закрыла",
@@ -254,7 +254,7 @@ namespace TwitterBot
                     usersToFollow = usersToFollow.Where(item => !blacklist.Contains((long)item)).ToList();
                 }
 
-                FollowUsers(usersToFollow.Distinct().Take(50));
+                FollowUsers(usersToFollow.Distinct().Take(50).ToList());
             }
             catch (Exception e)
             {
@@ -263,7 +263,7 @@ namespace TwitterBot
             }
         }
 
-        private void FollowUsers(IEnumerable<ulong> usersToFollow)
+        private void FollowUsers(List<ulong> usersToFollow)
         {
             foreach (var user in usersToFollow)
             {
@@ -317,6 +317,7 @@ namespace TwitterBot
             var users = new List<ulong>();
             try
             {
+                _logs.WriteLog($"Retweets of Me");
                 Limiter(RetweetsOfMeLimitName); 
                 var retweetsOfMe = _twitterCtx.Status.Where(s => s.Type == StatusType.RetweetsOfMe && s.Count == 10).ToList();
                 foreach(var tweet in retweetsOfMe)
@@ -338,6 +339,7 @@ namespace TwitterBot
         {
             try
             {
+                _logs.WriteLog($"Mentions to Me");
                 Limiter(MentionsLimitName); 
                 var tweets = _twitterCtx.Status.Where(tweet => tweet.Type == StatusType.Mentions && tweet.ScreenName == Username).ToList();
                 return tweets.Select(item => item.UserID);
@@ -355,6 +357,7 @@ namespace TwitterBot
         {
             try
             {
+                _logs.WriteLog($"Who Followed Me");
                 var followers = GetFriendship(FriendshipType.FollowerIDs);
                 var followings = GetFriendship(FriendshipType.FriendIDs);
                 return followers.Except(followings);
@@ -377,7 +380,7 @@ namespace TwitterBot
                 if(limitToCache != null)
                 {
                     _limitCache[limitName] = limitToCache.Remaining;
-                    _logs.WriteLog($"limitfrom web for {limitName} is {limitToCache.Remaining}");
+                    _logs.WriteLog($"limit from web for {limitName} is {limitToCache.Remaining}");
                     if (_limitCache[limitName] == 0)
                     {
                         _logs.WriteLog($"limit for {limitName} is 0");
@@ -395,7 +398,7 @@ namespace TwitterBot
                     _logs.WriteLog($"limitToCache is null for limit {limitName}");
                 }
             }
-            _logs.WriteLog($"limit from cache for {limitName} is {limitName}. Reducing.");
+            _logs.WriteLog($"limit from cache for {limitName} is {_limitCache[limitName]}. Reducing.");
             _limitCache[limitName]--;
         }
 
