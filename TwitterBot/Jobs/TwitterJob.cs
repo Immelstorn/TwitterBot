@@ -55,9 +55,7 @@ namespace TwitterBot.Jobs
                 Logs.WriteLog("Creating new generate times job");
                 var job = JobBuilder.Create<GenerateUpdateTimesJob>().Build();
 
-                //                var startTime = new DateTime(DateTime.Today.AddHours(13).AddMinutes(47).Ticks, DateTimeKind.Utc);
-                //                var trigger = TriggerBuilder.Create().StartAt(startTime.ToLocalTime()).Build();
-
+//                var startTime = new DateTime(DateTime.Today.AddHours(10).AddMinutes(26).Ticks, DateTimeKind.Utc);
                 var startTime = new DateTime(DateTime.Today.AddHours(6).AddDays(1).Ticks, DateTimeKind.Utc);
                 var trigger = TriggerBuilder.Create().StartAt(startTime.ToLocalTime()).Build();
                 Logs.WriteLog($"Scheduling to: {startTime}");

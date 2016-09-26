@@ -24,9 +24,10 @@ namespace TwitterBot.Jobs
                 {
                     var day = TimeSpan.FromHours(13);
                     var updateTimes = new List<DateTime>();
-                    var done = true;
+                    bool done;
                     do
                     {
+                        done = true;
                         for (var i = 0; i < 5; i++)
                         {
                             var rnd = _random.Next(Convert.ToInt32(day.TotalSeconds));
