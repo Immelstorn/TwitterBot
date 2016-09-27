@@ -57,7 +57,7 @@ namespace TwitterBot
             "заплатила",
             "купила",
             "секс",
-            "муж",
+            "мой муж",
             "мой мужик",
             "улыбаюсь",
             "сняла",
@@ -234,37 +234,46 @@ namespace TwitterBot
             return validStatuses;
         }
 
-        public void Follow(IEnumerable<ulong> users, bool skipBlackList = true)
+        public void Follow(List<ulong> users, bool skipBlackList = true)
         {
-            try
+            if(users.Any())
             {
-                var followings = GetFriendship(FriendshipType.FriendIDs);
-
-                List<long> blacklist;
-                using (var db = new TwitterBotContext())
+                try
                 {
-                    blacklist = db.BlackLists.Select(s => s.UserId).ToList();
+                    var followings = GetFriendship(FriendshipType.FriendIDs);
+
+                    List<long> blacklist;
+                    using (var db = new TwitterBotContext())
+                    {
+                        blacklist = db.BlackLists.Select(s => s.UserId).ToList();
+                    }
+
+                    //если пришли из whoFollowedMe то фолловим не оглядываясь на черный список
+                    var usersToFollow = users.Where(item => !followings.Contains(item));
+
+                    if (!skipBlackList)
+                    {
+                        usersToFollow = usersToFollow.Where(item => !blacklist.Contains((long)item)).ToList();
+                    }
+
+                    FollowUsers(usersToFollow.Distinct().Take(50).ToList());
                 }
-
-                //если пришли из whoFollowedMe то фолловим не оглядываясь на черный список
-                var usersToFollow = users.Where(item => !followings.Contains(item));
-
-                if (!skipBlackList)
+                catch (Exception e)
                 {
-                    usersToFollow = usersToFollow.Where(item => !blacklist.Contains((long)item)).ToList();
+                    _logs.WriteLog($"Follow Failed. Exception was thrown.");
+                    _logs.WriteErrorLog(e);
                 }
-
-                FollowUsers(usersToFollow.Distinct().Take(50).ToList());
-            }
-            catch (Exception e)
-            {
-                _logs.WriteLog($"Follow Failed. Exception was thrown.");
-                _logs.WriteErrorLog(e);
             }
         }
 
         private void FollowUsers(List<ulong> usersToFollow)
         {
+            var outgoing = _twitterCtx.Friendship.SingleOrDefault(req => req.Type == FriendshipType.Outgoing);
+            if(outgoing?.IDInfo?.IDs != null)
+            {
+                usersToFollow = usersToFollow.Except(outgoing.IDInfo.IDs).ToList();
+            }
+           
             foreach (var user in usersToFollow)
             {
 //                Limiter(CreateFriendshipLimitName);
@@ -277,7 +286,7 @@ namespace TwitterBot
             _logs.WriteLog($"Followed {usersToFollow.Count()} users");
         }
 
-        public IEnumerable<ulong> UsersToFollow()
+        public List<ulong> UsersToFollow()
         {
             try
             {
@@ -312,7 +321,7 @@ namespace TwitterBot
             return new List<ulong>();
         }
 
-        public IEnumerable<ulong> RetweetsOfMe()
+        public List<ulong> RetweetsOfMe()
         {
             var users = new List<ulong>();
             try
@@ -335,14 +344,14 @@ namespace TwitterBot
             return users;
         }
 
-        public IEnumerable<ulong> MentionsToMe()
+        public List<ulong> MentionsToMe()
         {
             try
             {
                 _logs.WriteLog($"Mentions to Me");
                 Limiter(MentionsLimitName); 
                 var tweets = _twitterCtx.Status.Where(tweet => tweet.Type == StatusType.Mentions && tweet.ScreenName == Username).ToList();
-                return tweets.Select(item => item.UserID);
+                return tweets.Select(item => item.UserID).ToList();
             }
             catch (Exception e)
             {
@@ -353,14 +362,14 @@ namespace TwitterBot
 
         }
 
-        public IEnumerable<ulong> WhoFollowedMe()
+        public List<ulong> WhoFollowedMe()
         {
             try
             {
                 _logs.WriteLog($"Who Followed Me");
                 var followers = GetFriendship(FriendshipType.FollowerIDs);
                 var followings = GetFriendship(FriendshipType.FriendIDs);
-                return followers.Except(followings);
+                return followers.Except(followings).ToList();
             }
             catch (Exception e)
             {
