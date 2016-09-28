@@ -351,7 +351,7 @@ namespace TwitterBot
                 _logs.WriteLog($"Mentions to Me");
                 Limiter(MentionsLimitName); 
                 var tweets = _twitterCtx.Status.Where(tweet => tweet.Type == StatusType.Mentions && tweet.ScreenName == Username).ToList();
-                return tweets.Select(item => item.UserID).ToList();
+                return tweets.Select(item => ulong.Parse(item.User.UserIDResponse)).ToList();
             }
             catch (Exception e)
             {
@@ -381,7 +381,7 @@ namespace TwitterBot
 
         private void Limiter(string limitName)
         {
-            _logs.WriteLog($"looking for limit for {limitName}");
+//            _logs.WriteLog($"looking for limit for {limitName}");
             if(!_limitCache.ContainsKey(limitName) || _limitCache[limitName] == 0)
             {
                 var limit = _twitterCtx.Help.Where(h => h.Type == HelpType.RateLimits).ToList();
@@ -407,7 +407,7 @@ namespace TwitterBot
                     _logs.WriteLog($"limitToCache is null for limit {limitName}");
                 }
             }
-            _logs.WriteLog($"limit from cache for {limitName} is {_limitCache[limitName]}. Reducing.");
+//            _logs.WriteLog($"limit from cache for {limitName} is {_limitCache[limitName]}. Reducing.");
             _limitCache[limitName]--;
         }
 
