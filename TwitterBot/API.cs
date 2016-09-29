@@ -45,30 +45,29 @@ namespace TwitterBot
         private const int _usersToFollow = 5;
 
         private readonly List<string> _wordsToSearch = new List<string> {
-            "закрыла",
+            "я закрыла",
             "мои сиськи",
             "моими сиськами",
-            "собиралась",
-            "решила",
-            "предлагаю",
-            "люблю",
-            "ебала",
-            "вздохнула",
-            "заплатила",
-            "купила",
+            "я собиралась",
+            "я решила",
+            "я предлагаю",
+            "я люблю",
+            "я ебала",
+            "я вздохнула",
+            "я заплатила",
+            "я купила",
             "секс",
             "мой муж",
             "мой мужик",
-            "улыбаюсь",
-            "сняла",
-            "привыкла",
+            "я улыбаюсь",
+            "я сняла",
+            "я привыкла",
             "любимые",
-            "охуенно",
-            "юбка",
-            "ПМС",
+            "моя юбка",
             "оргазм",
-            "плкакать",
-            "узнала",
+            "я плакала",
+            "я узнала",
+            "я решила",
         };
         #endregion
 
@@ -273,11 +272,13 @@ namespace TwitterBot
             {
                 usersToFollow = usersToFollow.Except(outgoing.IDInfo.IDs).ToList();
             }
-           
-            foreach (var user in usersToFollow)
+
+            var users = _twitterCtx.User.Where(u => u.Type == UserType.Lookup && u.UserIdList == string.Join(",", usersToFollow)).ToList();
+
+            foreach (var user in users)
             {
 //                Limiter(CreateFriendshipLimitName);
-                var result = _twitterCtx.CreateFriendshipAsync(user, false).Result;
+                var result = _twitterCtx.CreateFriendshipAsync(ulong.Parse(user.UserIDResponse), false).Result;
                 if (result?.Status == null)
                 {
                     _logs.WriteLog($"An error during following. Returned user is null.");
