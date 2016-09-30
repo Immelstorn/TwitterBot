@@ -273,18 +273,20 @@ namespace TwitterBot
                 usersToFollow = usersToFollow.Except(outgoing.IDInfo.IDs).ToList();
             }
 
-            var users = _twitterCtx.User.Where(u => u.Type == UserType.Lookup && u.UserIdList == string.Join(",", usersToFollow)).ToList();
-
-            foreach (var user in users)
+            if(usersToFollow.Any())
             {
-//                Limiter(CreateFriendshipLimitName);
-                var result = _twitterCtx.CreateFriendshipAsync(ulong.Parse(user.UserIDResponse), false).Result;
-                if (result?.Status == null)
+                var users = _twitterCtx.User.Where(u => u.Type == UserType.Lookup && u.UserIdList == string.Join(",", usersToFollow)).ToList();
+
+                foreach (var user in users)
                 {
-                    _logs.WriteLog($"An error during following. Returned user is null.");
+                    var result = _twitterCtx.CreateFriendshipAsync(ulong.Parse(user.UserIDResponse), false).Result;
+                    if (result?.Status == null)
+                    {
+                        _logs.WriteLog($"An error during following. Returned user is null.");
+                    }
                 }
+                _logs.WriteLog($"Followed {usersToFollow.Count()} users");
             }
-            _logs.WriteLog($"Followed {usersToFollow.Count()} users");
         }
 
         public List<ulong> UsersToFollow()
