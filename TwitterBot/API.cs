@@ -7,6 +7,7 @@ using System.Threading;
 using LinqToTwitter;
 
 using TwitterBot.DB;
+using TwitterBot.DB.Entities;
 
 namespace TwitterBot
 {
@@ -419,5 +420,17 @@ namespace TwitterBot
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             return epoch.AddSeconds(unixTime);
         }
+
+	    public void WriteStats()
+	    {
+            var followers = GetFriendship(FriendshipType.FollowerIDs);
+            var followings = GetFriendship(FriendshipType.FriendIDs);
+
+	        var stat = new Statistic {
+	            Followers = followers.Count,
+                Followings = followings.Count
+	        };
+
+	    }
     }
 }

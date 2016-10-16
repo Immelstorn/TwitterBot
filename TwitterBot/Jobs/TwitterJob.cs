@@ -97,6 +97,8 @@ namespace TwitterBot.Jobs
 
                 //follow who followed
                 API.Follow(API.WhoFollowedMe());
+
+                API.WriteStats();
             }
             catch (Exception e)
             {

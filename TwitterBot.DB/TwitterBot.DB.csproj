@@ -53,6 +53,7 @@
     <Compile Include="Entities\BlackList.cs" />
     <Compile Include="Entities\ErrorLog.cs" />
     <Compile Include="Entities\Log.cs" />
+    <Compile Include="Entities\Statistic.cs" />
     <Compile Include="Entities\StatusLog.cs" />
     <Compile Include="Entities\UpdateTime.cs" />
     <Compile Include="Migrations\201609161136185_init.cs" />
@@ -74,6 +75,10 @@
     <Compile Include="Migrations\201609261328507_addStackTraceToErrorlog.cs" />
     <Compile Include="Migrations\201609261328507_addStackTraceToErrorlog.Designer.cs">
       <DependentUpon>201609261328507_addStackTraceToErrorlog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201610161259045_AddStats.cs" />
+    <Compile Include="Migrations\201610161259045_AddStats.Designer.cs">
+      <DependentUpon>201610161259045_AddStats.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="TwitterBotContext.cs" />
@@ -98,6 +103,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201609261328507_addStackTraceToErrorlog.resx">
       <DependentUpon>201609261328507_addStackTraceToErrorlog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201610161259045_AddStats.resx">
+      <DependentUpon>201610161259045_AddStats.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -14,6 +14,6 @@ namespace TwitterBot.DB
         public DbSet<BlackList> BlackLists { get; set; }
         public DbSet<ErrorLog> Errors { get; set; }
         public DbSet<UpdateTime> UpdateTimes{ get; set; }
-
+        public DbSet<Statistic> Statistics { get; set; }
     }
 }
