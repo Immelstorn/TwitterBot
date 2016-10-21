@@ -431,6 +431,11 @@ namespace TwitterBot
                 Followings = followings.Count
 	        };
 
-	    }
+	        using(var db = new TwitterBotContext())
+	        {
+	            db.Statistics.Add(stat);
+	            db.SaveChanges();
+	        }
+        }
     }
 }
