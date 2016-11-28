@@ -251,7 +251,7 @@ namespace TwitterBot
                     //если пришли из whoFollowedMe то фолловим не оглядываясь на черный список
                     var usersToFollow = users.Where(item => !followings.Contains(item));
 
-                    if (!skipBlackList)
+//                    if (!skipBlackList)
                     {
                         usersToFollow = usersToFollow.Where(item => !blacklist.Contains((long)item)).ToList();
                     }
